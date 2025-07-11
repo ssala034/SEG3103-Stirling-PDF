@@ -1,28 +1,57 @@
-const signaturePadCanvas = document.getElementById('drawing-pad-canvas');
-const undoButton = document.getElementById("signature-undo-button");
-const redoButton = document.getElementById("signature-redo-button");
-const signaturePad = new SignaturePad(signaturePadCanvas, {
-  minWidth: 1,
-  maxWidth: 2,
-  penColor: 'black',
-});
-
+// Keep all variables at the top level so they are accessible
+let signaturePadCanvas, undoButton, redoButton, signaturePad;
 let undoData = [];
 
-signaturePad.addEventListener("endStroke", () => {
-  undoData = [];
-});
+// This function will contain all the setup logic
 
-window.addEventListener("keydown", (event) => {
-  switch (true) {
-    case event.key === "z" && event.ctrlKey:
-      undoButton.click();
-      break;
-    case event.key === "y" && event.ctrlKey:
-      redoButton.click();
-      break;
-  }
-});
+function init() {
+  signaturePadCanvas = document.getElementById("drawing-pad-canvas");
+  undoButton = document.getElementById("signature-undo-button");
+  redoButton = document.getElementById("signature-redo-button");
+
+  signaturePad = new SignaturePad(signaturePadCanvas, {
+    minWidth: 1,
+    maxWidth: 2,
+    penColor: "black",
+  });
+
+  signaturePad.addEventListener("endStroke", () => {
+    undoData = [];
+  });
+
+  // Define the handler as a named function so we can remove it later
+  const handleKeyDown = (event) => {
+    switch (true) {
+      case event.key === "z" && event.ctrlKey:
+        undoButton.click();
+        break;
+      case event.key === "y" && event.ctrlKey:
+        redoButton.click();
+        break;
+    }
+  };
+
+  window.addEventListener("keydown", handleKeyDown);
+
+  const debouncedResize = debounce(resizeCanvas, 200);
+  new IntersectionObserver((entries) => {
+    if (entries.some((entry) => entry.intersectionRatio > 0)) {
+      debouncedResize();
+    }
+  }).observe(signaturePadCanvas);
+
+  new ResizeObserver(debouncedResize).observe(signaturePadCanvas);
+
+  // Return a cleanup function for tests to use
+  return function cleanup() {
+    window.removeEventListener("keydown", handleKeyDown);
+  };
+}
+
+// Automatically call init in a browser environment
+if (typeof window !== "undefined" && typeof module === "undefined") {
+  window.addEventListener("DOMContentLoaded", init);
+}
 
 function undoDraw() {
   const data = signaturePad.toData();
@@ -50,12 +79,15 @@ function addDraggableFromPad() {
 }
 
 function getCroppedCanvasDataUrl(canvas) {
-  let originalCtx = canvas.getContext('2d', { willReadFrequently: true });
+  let originalCtx = canvas.getContext("2d", { willReadFrequently: true });
   let originalWidth = canvas.width;
   let originalHeight = canvas.height;
   let imageData = originalCtx.getImageData(0, 0, originalWidth, originalHeight);
 
-  let minX = originalWidth + 1, maxX = -1, minY = originalHeight + 1, maxY = -1;
+  let minX = originalWidth + 1,
+    maxX = -1,
+    minY = originalHeight + 1,
+    maxY = -1;
 
   for (let y = 0; y < originalHeight; y++) {
     for (let x = 0; x < originalWidth; x++) {
@@ -75,8 +107,8 @@ function getCroppedCanvasDataUrl(canvas) {
   if (croppedWidth < 0 || croppedHeight < 0) return null;
   let cutImageData = originalCtx.getImageData(minX, minY, croppedWidth, croppedHeight);
 
-  let croppedCanvas = document.createElement('canvas');
-  let croppedCtx = croppedCanvas.getContext('2d');
+  let croppedCanvas = document.createElement("canvas");
+  let croppedCtx = croppedCanvas.getContext("2d");
 
   croppedCanvas.width = croppedWidth;
   croppedCanvas.height = croppedHeight;
@@ -87,7 +119,7 @@ function getCroppedCanvasDataUrl(canvas) {
 
 function isMobile() {
   const userAgentCheck = /Mobi|Android|iPhone|iPad|iPod|Windows Phone|Opera Mini/i.test(navigator.userAgent);
-  const viewportCheck = window.matchMedia('(max-width: 768px)').matches;
+  const viewportCheck = window.matchMedia("(max-width: 768px)").matches;
   return userAgentCheck || viewportCheck;
 }
 
@@ -101,7 +133,7 @@ function resizeCanvas() {
 
   signaturePadCanvas.width = signaturePadCanvas.offsetWidth * ratio * additionalFactor;
   signaturePadCanvas.height = signaturePadCanvas.offsetHeight * ratio * additionalFactor;
-  signaturePadCanvas.getContext('2d').scale(ratio * additionalFactor, ratio * additionalFactor);
+  signaturePadCanvas.getContext("2d").scale(ratio * additionalFactor, ratio * additionalFactor);
 
   signaturePad.clear();
 }
@@ -114,12 +146,17 @@ const debounce = (fn, delay = 100) => {
   };
 };
 
-const debouncedResize = debounce(resizeCanvas, 200);
-
-new IntersectionObserver((entries) => {
-  if (entries.some((entry) => entry.intersectionRatio > 0)) {
-    debouncedResize();
-  }
-}).observe(signaturePadCanvas);
-
-new ResizeObserver(debouncedResize).observe(signaturePadCanvas);
+// Add init to the exports for testing
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    init, // <-- Export init
+    undoDraw,
+    redoDraw,
+    addDraggableFromPad,
+    getCroppedCanvasDataUrl,
+    isMobile,
+    getDeviceScalingFactor,
+    resizeCanvas,
+    debounce,
+  };
+}
