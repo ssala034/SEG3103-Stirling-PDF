@@ -86,6 +86,10 @@ dependencies {
     // runtimeOnly "com.twelvemonkeys.imageio:imageio-xwd:$imageioVersion"
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    // Jqwik
+    implementation 'net.jqwik:jqwik:1.9.3'
+
 }
 
 sourceSets {

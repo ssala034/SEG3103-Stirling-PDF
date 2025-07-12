@@ -9,6 +9,9 @@ import static org.mockito.Mockito.when;
 
 import java.util.Calendar;
 
+import net.jqwik.api.ForAll;
+import net.jqwik.api.Property;
+import net.jqwik.api.constraints.Positive;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.junit.jupiter.api.BeforeEach;
@@ -234,4 +237,11 @@ class PdfMetadataServiceTest {
         verify(testInfo).setCreator(STIRLING_PDF_LABEL);
         verify(testInfo).setCreationDate(org.mockito.ArgumentMatchers.any(Calendar.class));
     }
+
+    @Property
+    public void divideBySelf(@ForAll @Positive int value) {
+        int result = value / value ;
+        assertEquals(1, result);
+    }
+
 }

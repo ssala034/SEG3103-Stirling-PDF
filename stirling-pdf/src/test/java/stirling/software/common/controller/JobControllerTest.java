@@ -1,10 +1,12 @@
 package stirling.software.common.controller;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.util.Map;
 
+import net.jqwik.api.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -22,9 +24,20 @@ import stirling.software.common.model.job.JobStats;
 import stirling.software.common.service.FileStorage;
 import stirling.software.common.service.JobQueue;
 import stirling.software.common.service.TaskManager;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.beans.factory.annotation.Autowired;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import org.junit.jupiter.api.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import org.springframework.http.MediaType;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
+
+
+@WebMvcTest(JobController.class)
 class JobControllerTest {
-
     @Mock
     private TaskManager taskManager;
 
@@ -41,6 +54,9 @@ class JobControllerTest {
 
     @InjectMocks
     private JobController controller;
+
+    @Autowired
+    private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
@@ -228,7 +244,7 @@ class JobControllerTest {
         assertTrue(response.getBody().toString().contains("Error retrieving file"));
     }
 
-	/*
+    /*
 	 * @Test void testGetJobStats() { // Arrange JobStats mockStats =
 	 * JobStats.builder() .totalJobs(10) .activeJobs(3) .completedJobs(7) .build();
 	 *
@@ -403,4 +419,24 @@ class JobControllerTest {
         verify(taskManager, never()).getJobResult(anyString());
         verify(taskManager, never()).setError(anyString(), anyString());
     }
+
+//    @Property
+//    void testGetJobStatus(@ForAll("validJobIds") String jobId) {
+//        // Simulate calling the controller
+//        ResponseEntity<?> response = controller.getJobStatus(jobId);
+//
+//        if (jobId == null || jobId.isEmpty()) {
+//            assertThat(response.getStatusCodeValue()).isEqualTo(404); // Not Found for invalid jobId
+//        } else {
+//            assertThat(response.getStatusCodeValue()).isIn(200, 404); // Should either return OK or Not Found
+//        }
+//    }
+//
+//    // Custom Generator to simulate valid jobId
+//    @Provide
+//    public Arbitrary<String> validJobIds() {
+//        return Arbitraries.strings()
+//            .ofLength(10)
+//            .alpha().numeric(); // Job IDs are alphanumeric and 10 characters long
+//    }
 }
