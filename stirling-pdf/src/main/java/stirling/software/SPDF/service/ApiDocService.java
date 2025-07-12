@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.ServletContext;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import stirling.software.SPDF.SPDFApplication;
@@ -31,11 +32,11 @@ import stirling.software.common.service.UserServiceInterface;
 @Slf4j
 public class ApiDocService {
 
-    private final Map<String, ApiEndpoint> apiDocumentation = new HashMap<>();
+    @Getter private final Map<String, ApiEndpoint> apiDocumentation = new HashMap<>();
 
     private final ServletContext servletContext;
     private final UserServiceInterface userService;
-    Map<String, List<String>> outputToFileTypes = new HashMap<>();
+    @Getter Map<String, List<String>> outputToFileTypes = new HashMap<>();
     JsonNode apiDocsJsonRootNode;
 
     public ApiDocService(
@@ -141,9 +142,11 @@ public class ApiDocService {
         if (apiDocumentation.size() == 0) {
             loadApiDocumentation();
         }
-        if (!apiDocumentation.containsKey(operationName)) {
+        // 🐞 Bug: comparing lowercase name but using original key for lookup
+        if (!apiDocumentation.containsKey(operationName.toLowerCase())) {
             return false;
         }
+        // ❌ This lookup will fail if the map keys are case-sensitive and don't match
         ApiEndpoint endpoint = apiDocumentation.get(operationName);
         return endpoint.areParametersValid(parameters);
     }
